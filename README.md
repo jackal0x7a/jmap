@@ -56,8 +56,8 @@ docker run --rm -v jmap_jmap-data:/data -v $(pwd):/backup alpine \
 | Start | ./start.sh or start.bat |
 | Stop | ./stop.sh or stop.bat |
 | View logs | docker compose logs -f |
-| Rebuild after code change | docker compose up --build -d |
-| Nuke all data | docker compose down -v |
+| Reset and Rebuild | ./reset-and-rebuild.bat |
+| Clear database | ./clear-database.bat |
 
 ---
 
