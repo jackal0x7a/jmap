@@ -1,0 +1,37 @@
+services:
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: jmap-backend
+    restart: unless-stopped
+    ports:
+      - "3747:3747"       # Also exposed directly so the Chrome extension can reach it
+    volumes:
+      - jmap-data:/data  # SQLite database persists here — survives container rebuilds
+    environment:
+      - DB_PATH=/data/jmap.db
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3747/api/projects')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  frontend:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: jmap-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  jmap-data:
+    driver: local
+    # Data lives at: docker volume inspect jmap_jmap-data

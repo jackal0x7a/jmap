@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>J-MAP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #07090f;
+      --bg1: #0c0f1a;
+      --border: rgba(255,255,255,0.09);
+      --glass: rgba(255,255,255,0.05);
+      --glass2: rgba(255,255,255,0.08);
+      --green: #00e87a;
+      --green-dim: rgba(0,232,122,0.12);
+      --yellow: #fbbf24;
+      --yellow-dim: rgba(251,191,36,0.12);
+      --red: #f43f5e;
+      --text: #e2e8f5;
+      --text-dim: #7a8aaa;
+      --text-muted: #3d4d68;
+      --font: 'Poppins', sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+
+    body {
+      width: 320px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      overflow: hidden;
+    }
+
+    /* Ambient background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 120% 80% at 20% 0%, rgba(0,232,122,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 80% 60% at 80% 100%, rgba(56,189,248,0.04) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Header */
+    .header {
+      position: relative; z-index: 1;
+      background: rgba(255,255,255,0.04);
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      backdrop-filter: blur(12px);
+    }
+    .header::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+    }
+    .logo { display: flex; align-items: center; gap: 8px; }
+    .logo-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-icon img { width: 100%; height: 100%; object-fit: contain; }
+    .logo-title { font-size: 14px; font-weight: 700; color: #fff; font-family: var(--mono); letter-spacing: 1px; }
+    .logo-title span { color: var(--green); }
+
+    /* Toggle */
+    .toggle { position: relative; width: 36px; height: 20px; cursor: pointer; display: block; }
+    .toggle input { display: none; }
+    .toggle-slider { position: absolute; inset: 0; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; transition: .2s; }
+    .toggle-slider::before { content:''; position:absolute; width:14px; height:14px; left:2px; top:2px; background:#555; border-radius:50%; transition:.2s; }
+    .toggle input:checked + .toggle-slider { background: rgba(0,232,122,0.2); border-color: rgba(0,232,122,0.4); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(16px); background: var(--green); box-shadow: 0 0 8px rgba(0,232,122,0.5); }
+
+    /* Loading */
+    #loadingView { padding: 28px 14px; text-align: center; color: var(--text-muted); font-size: 12px; position: relative; z-index: 1; }
+    .loading-spinner {
+      display: inline-block; width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.07); border-top-color: var(--green);
+      border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+
+    #mainView { display: none; position: relative; z-index: 1; animation: fadeIn 0.2s ease; }
+
+    /* Project banner */
+    .project-banner {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px;
+      background: rgba(255,255,255,0.02);
+    }
+    .project-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.15); flex-shrink: 0; }
+    .project-dot.active { background: var(--green); animation: pulse 2s infinite; box-shadow: 0 0 8px rgba(0,232,122,0.4); }
+    .project-name { color: var(--green); font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .project-name.none { color: var(--text-muted); font-style: italic; font-weight: 400; }
+    .project-hint { font-size: 10px; color: var(--text-muted); flex-shrink: 0; }
+
+    /* Pending row */
+    .pending-row {
+      padding: 6px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 11px; color: var(--text-muted);
+    }
+    .pending-count { color: #fb923c; font-weight: 700; font-family: var(--mono); }
+    .pending-count.zero { color: var(--green); }
+    .sync-btn {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+      color: var(--text-dim); padding: 3px 9px; font-size: 10px; font-family: var(--font);
+      cursor: pointer; transition: .15s;
+    }
+    .sync-btn:hover { color: #fff; background: rgba(255,255,255,0.09); }
+    .sync-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* Scope warning */
+    .scope-warning {
+      margin: 10px 12px 2px;
+      background: rgba(251,191,36,0.08);
+      border: 1px solid rgba(251,191,36,0.25);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex; align-items: flex-start; gap: 8;
+      animation: fadeIn 0.3s ease;
+    }
+    .scope-warning.hidden { display: none; }
+    .warn-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .warn-text { font-size: 11px; color: var(--yellow); line-height: 1.5; flex: 1; }
+    .warn-text strong { color: #fff; display: block; margin-bottom: 1px; font-size: 11.5px; }
+
+    /* Section */
+    .section { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); margin-bottom: 7px; font-weight: 600; }
+    .scope-row { display: flex; gap: 5px; }
+    .scope-input {
+      flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+      color: var(--text); padding: 7px 10px; font-family: var(--mono); font-size: 11px; outline: none; transition: .2s;
+    }
+    .scope-input:focus { border-color: rgba(0,232,122,0.4); background: rgba(255,255,255,0.08); }
+    .scope-input::placeholder { color: var(--text-muted); }
+    .add-btn {
+      background: var(--green); color: #000; border: none; border-radius: 8px;
+      padding: 7px 12px; font-family: var(--font); font-size: 11px; font-weight: 700;
+      cursor: pointer; transition: .15s; flex-shrink: 0;
+    }
+    .add-btn:hover { background: #00cc6a; transform: scale(1.03); }
+    .scope-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; min-height: 20px; }
+    .tag {
+      background: rgba(0,232,122,0.08); border: 1px solid rgba(0,232,122,0.2); color: var(--green);
+      border-radius: 6px; padding: 3px 8px; font-size: 11px;
+      display: flex; align-items: center; gap: 4px; font-family: var(--mono);
+    }
+    .tag-x { cursor: pointer; color: rgba(0,232,122,0.5); font-size: 14px; line-height: 1; transition: .1s; }
+    .tag-x:hover { color: var(--red); }
+    .empty { font-size: 11px; color: var(--text-muted); font-style: italic; }
+
+    /* Footer */
+    .footer { padding: 10px 12px 13px; }
+    .open-btn {
+      display: block; width: 100%;
+      background: rgba(0,232,122,0.08);
+      border: 1px solid rgba(0,232,122,0.2);
+      border-radius: 10px; color: var(--green);
+      padding: 9px 12px; font-size: 12px; font-family: var(--font); font-weight: 500;
+      text-align: center; cursor: pointer; transition: .15s; text-decoration: none;
+      position: relative; overflow: hidden;
+    }
+    .open-btn::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0,232,122,0.3), transparent);
+    }
+    .open-btn:hover { background: rgba(0,232,122,0.14); transform: translateY(-1px); }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">
+        <img src="icons/icon128.png" alt="Logo" onerror="this.parentElement.innerHTML='⚡'" />
+      </div>
+      <div class="logo-title">J-<span>MAP</span></div>
+    </div>
+    <label class="toggle">
+      <input type="checkbox" id="enableToggle" checked>
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+
+  <div id="loadingView">
+    <div class="loading-spinner"></div>
+    <div>Connecting…</div>
+  </div>
+
+  <div id="mainView">
+    <!-- Project indicator -->
+    <div class="project-banner">
+      <div class="project-dot" id="projectDot"></div>
+      <span class="project-name none" id="projectName">No active project</span>
+      <span class="project-hint" id="projectHint"></span>
+    </div>
+
+    <!-- Pending queue -->
+    <div class="pending-row">
+      <span><span class="pending-count zero" id="pendingCount">0</span> files queued</span>
+      <button class="sync-btn" id="syncBtn">⟳ Flush</button>
+    </div>
+
+    <!-- Scope warning (shown when no scope is set) -->
+    <div class="scope-warning hidden" id="scopeWarning">
+      <span class="warn-icon">⚠</span>
+      <div class="warn-text">
+        <strong>No scope — nothing captured</strong>
+        Add a domain below to start intercepting JS files.
+      </div>
+    </div>
+
+    <!-- Scope -->
+    <div class="section">
+      <div class="section-title">Capture Scope</div>
+      <div class="scope-row">
+        <input class="scope-input" id="scopeInput" placeholder="example.com or *.example.com" />
+        <button class="add-btn" id="addBtn">Add</button>
+      </div>
+      <div class="scope-tags" id="scopeTags"></div>
+    </div>
+
+    <!-- Open dashboard -->
+    <div class="footer">
+      <a href="http://localhost:5173" target="_blank" class="open-btn">
+        ↗ Open Dashboard · Manage Projects
+      </a>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
